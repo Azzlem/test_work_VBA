@@ -14,7 +14,7 @@ import openpyxl as px
 from openpyxl.utils.dataframe import dataframe_to_rows
 
 # Загрузка файла Excel
-file_path = r'TestTask2.xlsx'
+file_path = r'C:\Documents\Reports\TestTask2.xlsx'
 df = pd.read_excel(file_path, sheet_name='Sheet1')
 
 # Собрать все темы в список
