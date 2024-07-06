@@ -1,3 +1,9 @@
+import smtplib
+from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -103,3 +109,35 @@ ws.auto_filter.ref = ws.dimensions
 
 # Сохранение изменений
 wb.save(file_path)
+
+# Настройки для отправки почты
+smtp_server = 'smtp.yandex.ru'
+smtp_port = 465
+sender_email = 'your_email@yandex.ru'
+password = 'your_password'
+recipient_email = 'recipient@example.com'
+subject = 'Список тем для доклада'
+body = 'Во вложении файл со списком тем и найденными источниками.'
+
+# Создание письма
+msg = MIMEMultipart()
+msg['From'] = sender_email
+msg['To'] = recipient_email
+msg['Subject'] = subject
+
+# Добавление текста письма
+msg.attach(MIMEText(body, 'plain'))
+
+# Прикрепление файла
+attachment = MIMEBase('application', 'octet-stream')
+with open(file_path, 'rb') as file:
+    attachment.set_payload(file.read())
+
+encoders.encode_base64(attachment)
+attachment.add_header('Content-Disposition', f'attachment; filename={file_path.split("\\")[-1]}')
+msg.attach(attachment)
+
+# Отправка письма
+with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
+    server.login(sender_email, password)
+    server.sendmail(sender_email, recipient_email, msg.as_string())
