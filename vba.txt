@@ -1,0 +1,74 @@
+Sub ConsolidateFiles()
+    Dim folderPath As String
+    Dim outputPath As String
+    Dim outputFileName As String
+    Dim outputWorkbook As Workbook
+    Dim outputWorksheet As Worksheet
+    Dim currentWorkbook As Workbook
+    Dim currentWorksheet As Worksheet
+    Dim currentFileName As String
+    Dim currentDay As String
+    Dim lastRow As Long
+    Dim lastCol As Long
+    Dim destRow As Long
+    Dim colToSum As String
+
+    ' Получение пути к папке из ячейки A1
+    folderPath = ThisWorkbook.Sheets(1).Range("A1").Value
+    If Right(folderPath, 1) <> "\" Then folderPath = folderPath & "\"
+
+    ' Установка итогового имени файла
+    outputFileName = "total.xlsx"
+    currentDay = Format(Date, "yyyy-mm-dd")
+    outputPath = folderPath & currentDay & "\"
+
+    ' Создание папки с текущей датой
+    If Dir(outputPath, vbDirectory) = "" Then
+        MkDir outputPath
+    End If
+
+    ' Создание нового итогового файла
+    Set outputWorkbook = Workbooks.Add
+    Set outputWorksheet = outputWorkbook.Sheets(1)
+    outputWorksheet.Name = "Sheet1"
+    destRow = 1
+
+    ' Обход файлов в папке
+    currentFileName = Dir(folderPath & "*.xlsx")
+    Do While currentFileName <> ""
+        If currentFileName <> outputFileName Then
+            Set currentWorkbook = Workbooks.Open(folderPath & currentFileName)
+            Set currentWorksheet = currentWorkbook.Sheets(1)
+
+            ' Копирование данных из текущего файла
+            lastRow = currentWorksheet.Cells(currentWorksheet.Rows.Count, 1).End(xlUp).Row
+            lastCol = currentWorksheet.Cells(1, currentWorksheet.Columns.Count).End(xlToLeft).Column
+            currentWorksheet.Range(currentWorksheet.Cells(1, 1), currentWorksheet.Cells(lastRow, lastCol)).Copy
+            outputWorksheet.Cells(destRow, 1).PasteSpecial xlPasteValuesAndNumberFormats
+            destRow = destRow + lastRow
+
+            currentWorkbook.Close False
+        End If
+        currentFileName = Dir
+    Loop
+
+    ' Сохранение итогового файла
+    outputWorkbook.SaveAs Filename:=outputPath & outputFileName
+
+    ' Прописывание формулы суммирования по колонке B (можно поменять)
+    colToSum = "B"
+    lastRow = outputWorksheet.Cells(outputWorksheet.Rows.Count, 1).End(xlUp).Row
+    outputWorksheet.Cells(lastRow + 1, 1).Formula = "=SUM(" & colToSum & "1:" & colToSum & lastRow & ")"
+
+    ' Замена точек на запятые
+    outputWorksheet.Cells.Replace What:=".", Replacement:=",", LookAt:=xlPart, _
+        SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False
+
+    ' сохранение изменений и закрытие файла
+    outputWorkbook.Save
+    outputWorkbook.Close
+
+    MsgBox "файлы объеденены и сохранены В-> " & outputPath
+End Sub
+
+
